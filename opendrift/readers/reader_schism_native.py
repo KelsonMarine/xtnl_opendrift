@@ -87,18 +87,21 @@ class Reader(BaseReader,UnstructuredReader):
         self.convolve = None  # Convolution kernel or kernel size
 
         # [name_used_in_schism : equivalent_CF_name used in opendrift]
+        # First edit: changed mapping so it reads directly from the variable names in our SCHISM files for Prince William Sound
         schism_mapping = {
             'dahv': 'x_sea_water_velocity',
             'dahv': 'y_sea_water_velocity',
             'hvel': 'x_sea_water_velocity',
             'hvel': 'y_sea_water_velocity',
             'depth': 'sea_floor_depth_below_sea_level',
-            'elev' : 'sea_surface_height',
-            'temp' : 'sea_water_temperature',
-            'salt' : 'sea_water_salinity',
-            'zcor' : 'vertical_levels', # time-varying vertical coordinates
+            'elevation' : 'sea_surface_height',
+            'temperature' : 'sea_water_temperature',
+            'salinity' : 'sea_water_salinity',
+            'zCoordinates' : 'vertical_levels', # time-varying vertical coordinates
             'sigma': 'ocean_s_coordinate',
-            'vertical_velocity' : 'upward_sea_water_velocity'}
+            'verticalVelocity' : 'upward_sea_water_velocity',
+            # 'verticalStokesVel': # Insert mapping for Stokes drift
+            }
             # diffusivity
             # viscosity
 
@@ -136,11 +139,11 @@ class Reader(BaseReader,UnstructuredReader):
         if self.use_3d and 'hvel' not in self.dataset.variables:
             logger.debug('No 3D velocity data in file - cannot find variable ''hvel'' ')
         elif self.use_3d and 'hvel' in self.dataset.variables:
-            if 'zcor' in self.dataset.variables: # both hvel and zcor in files - all good
+            if 'zCoordinates' in self.dataset.variables: # both hvel and zCoordinates in files - all good
                 self.nb_levels = self.dataset.variables['hvel'].shape[2] #hvel dimensions : [time,node,lev,2]
             else:
-                logger.debug('No vertical level information present in file ''zcor'' ... stopping')
-                raise ValueError('variable ''zcor'' must be present in netcdf file to be able to use 3D currents')
+                logger.debug('No vertical level information present in file ''zCoordinates'' ... stopping')
+                raise ValueError('variable ''zCoordinates'' must be present in netcdf file to be able to use 3D currents')
 
         logger.debug('Finding coordinate variables.')
         # Find x, y and z coordinates
@@ -365,7 +368,7 @@ class Reader(BaseReader,UnstructuredReader):
                        data = var[indxTime,:,1]
                     logger.debug('reading 2D velocity data from unstructured reader %s' % (par))
 
-                elif var.ndim == 4: # #3D current data 'hvel' defined at each node, level, and time [time,node,zcor,2]
+                elif var.ndim == 4: # #3D current data 'hvel' defined at each node, level, and time [time,node,zCoordinates,2]
                     if par == 'x_sea_water_velocity':
                        data = var[indxTime,:,:,0]   #hvel dimensions : [time,node,lev,2]
                     elif par == 'y_sea_water_velocity':
@@ -385,7 +388,7 @@ class Reader(BaseReader,UnstructuredReader):
         '''
         The function reshapes a data matrix of dimensions = [node,vertical_levels] (i.e. data at vertical levels, at given time step)
         into a one-column array and works out corresponding 3d coordinates [lon,lat,z] using the time-varying
-        'zcor' variable in SCHISM files (i.e. vertical level positions).
+        'zCoordinates' variable in SCHISM files (i.e. vertical level positions).
 
         These 3D coordinates will be used to build the 3D KDtree for data interpolation and will be added to the 'variable_dict'
         which is eventually passed to get_variables_interpolated().
@@ -400,7 +403,7 @@ class Reader(BaseReader,UnstructuredReader):
         '''
 
         try:
-            vertical_levels = self.dataset.variables['zcor'][id_time,:,:]
+            vertical_levels = self.dataset.variables['zCoordinates'][id_time,:,:]
             # depth are negative down consistent with convention used in OpenDrift
             # if using the netCDF4 library, vertical_levels is masked array where "masked" levels are those below seabed  (= 9.9692100e+36)
             # if using the xarray library, vertical_levels is nan for levels are those below seabed
@@ -409,8 +412,8 @@ class Reader(BaseReader,UnstructuredReader):
             data = np.asarray(data)
             # vertical_levels.mask = np.isnan(vertical_levels.data) # masked using nan's when using xarray
         except:
-            logger.debug('no vertical level information present in file ''zcor'' ... stopping')
-            raise ValueError('variable ''zcor'' must be present in netcdf file to be able to use 3D currents')
+            logger.debug('no vertical level information present in file ''zCoordinates'' ... stopping')
+            raise ValueError('variable ''zCoordinates'' must be present in netcdf file to be able to use 3D currents')
         # flatten 3D data
         data = np.ravel(data[~vertical_levels.mask])
 
@@ -931,7 +934,7 @@ class ReaderBlockUnstruct():
 
         if hasattr(self,'z_3d'):
             # we need to compute a new KDtree for that time step using vertical coordinates at that time step
-            logger.debug('Compute time-varying KDtree for 3D nearest-neighbor search (i.e using ''zcor'') ')
+            logger.debug('Compute time-varying KDtree for 3D nearest-neighbor search (i.e using ''zCoordinates'') ')
             # clean arrays if needed, especially z_3d (get rid of nan's) - keep only non-nan
             #
             # check for nan's
