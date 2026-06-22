@@ -72,15 +72,22 @@ class Reader(BaseReader,UnstructuredReader):
 
         py:mod:`opendrift.readers.basereader.unstructured`.
     """
-    def __init__(self, filename=None, name=None, proj4=None, use_3d = None):
 
-        if filename is None:
-            raise ValueError('Need filename as argument to constructor')
-        filestr = str(filename)
-        if name is None:
-            self.name = filestr
+    # Edit #2: This method is changed to accomodate datasets in addition to files by adding dataset as an initializable parameter
+    def __init__(self, filename=None, name=None, proj4=None, use_3d = None, dataset = None):
+
+        # Edit 2a: Setting the parameters based on wheter a dataset or file
+        if dataset is not None:
+            self.dataset = dataset
+            self.name = name or 'schism_native'
+        elif filename is not None:
+            filestr = str(filename)
+            if name is None:
+                self.name = filestr
+            else:
+                self.name = name
         else:
-            self.name = name
+            raise ValueError('Need either filename or dataset as argument to constructor')
 
         # Default interpolation method, see function interpolate_block()
         self.interpolation = 'linearNDFast'
@@ -107,19 +114,21 @@ class Reader(BaseReader,UnstructuredReader):
 
         self.return_block = True
 
-        try:
-            # Open file, check that everything is ok
-            logger.info('Opening dataset: ' + filestr)
-            if ('*' in filestr) or ('?' in filestr) or ('[' in filestr):
-                logger.info('Opening files with MFdataset')
-                # self.dataset = MFdataset(filename)
-                self.dataset = xr.open_mfdataset(filename,chunks={'time': 1}, decode_times=False)
-            else:
-                logger.info('Opening file with dataset')
-                # self.dataset = dataset(filename, 'r')
-                self.dataset = xr.open_dataset(filename,chunks={'time': 1}, decode_times=False)
-        except Exception as e:
-            raise ValueError(e)
+        # Edit 2b: Changed this block so it doesn't crash when a file isn't passed in
+        if dataset is None:
+            try:
+                # Open file, check that everything is ok
+                logger.info('Opening dataset: ' + filestr)
+                if ('*' in filestr) or ('?' in filestr) or ('[' in filestr):
+                    logger.info('Opening files with MFdataset')
+                    # self.dataset = MFdataset(filename)
+                    self.dataset = xr.open_mfdataset(filename,chunks={'time': 1}, decode_times=False)
+                else:
+                    logger.info('Opening file with dataset')
+                    # self.dataset = dataset(filename, 'r')
+                    self.dataset = xr.open_dataset(filename,chunks={'time': 1}, decode_times=False)
+            except Exception as e:
+                raise ValueError(e)
 
         # Define projection of input data
         if proj4 is not None: #  user has provided a projection apriori
