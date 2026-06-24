@@ -95,6 +95,7 @@ class Reader(BaseReader,UnstructuredReader):
 
         # [name_used_in_schism : equivalent_CF_name used in opendrift]
         # First edit: changed mapping so it reads directly from the variable names in our SCHISM files for Prince William Sound
+        # Edit #3: Added Stokes' Drift velocities and variables required to calculate Stokes' Drift to mapping
         schism_mapping = {
             'dahv': 'x_sea_water_velocity',
             'dahv': 'y_sea_water_velocity',
@@ -107,7 +108,13 @@ class Reader(BaseReader,UnstructuredReader):
             'zCoordinates' : 'vertical_levels', # time-varying vertical coordinates
             'sigma': 'ocean_s_coordinate',
             'verticalVelocity' : 'upward_sea_water_velocity',
-            # 'verticalStokesVel': # Insert mapping for Stokes drift
+            'stokesDriftVelX': 'sea_surface_wave_stokes_drift_x_velocity',
+            'stokesDriftVelY': 'sea_surface_wave_stokes_drift_y_velocity',
+            'meanWaveDirection': 'mean_wave_direction',
+            'meanWavePeriod': 'mean_wave_period',
+            'peakWaveNumber': 'peak_wave_number',
+            'peakWaveLength': 'peak_wavelength',
+            'sigWaveHeight': 'sea_surface_wave_significant_height'
             }
             # diffusivity
             # viscosity
