@@ -384,7 +384,7 @@ class OpenDriftSimulation(PhysicsMethods, Timeable, Configurable):
                                         'description': 'Name of simulation'},
             'general:coastline_action': {
                 'type': 'enum',
-                'enum': ['none', 'stranding', 'previous'],
+                'enum': ['none', 'stranding', 'previous', 'kelp_stranding'],
                 'default': 'stranding',
                 'level': CONFIG_LEVEL_BASIC,
                 'description': 'None means that objects may also move over land. '
@@ -701,6 +701,34 @@ class OpenDriftSimulation(PhysicsMethods, Timeable, Configurable):
 
             self.deactivate_elements(
                 (self.environment.land_binary_mask == 1) & (self.elements.z <= 0),
+                reason='stranded'
+            )
+
+            if not coastline_approximation_precision:
+                return
+
+            self.elements.lon[on_land], self.elements.lat[on_land] = coastline_crossing(
+                self._elements_previous.lon[self.elements.ID][on_land],
+                self._elements_previous.lat[self.elements.ID][on_land],
+                self.elements.lon[on_land],
+                self.elements.lat[on_land],
+                coastline_approximation_precision,
+                land_side=True
+            )
+
+            self.environment.land_binary_mask[on_land] = 0
+
+        elif i == 'kelp_stranding': # Deactivate regardless of height - added for our kelp module
+            on_land = np.where(self.environment.land_binary_mask == 1)[0]
+            if len(on_land) == 0:
+                logger.debug('No elements hit coastline.')
+                return
+
+            logger.debug('%s elements hit land, moving them to the coastline.' % len(on_land))
+
+            # Updated for Kelp: deactivates particles even if they are above the water.
+            self.deactivate_elements(
+                (self.environment.land_binary_mask == 1),
                 reason='stranded'
             )
 
@@ -4623,6 +4651,8 @@ class OpenDriftSimulation(PhysicsMethods, Timeable, Configurable):
 
         azimuth = np.degrees(np.arctan2(x_vel, y_vel))  # Direction of motion
         velocity = np.sqrt(x_vel**2 + y_vel**2)  # Velocity in m/s
+        # unreasonable = velocity>3
+        # velocity[unreasonable] = 0   # Masking velocities greater than 3m/s for testing
         velocity = velocity * self.elements.moving  # Do not move frosen elements
 
         # Calculate new positions
