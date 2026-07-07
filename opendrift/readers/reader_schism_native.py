@@ -114,7 +114,9 @@ class Reader(BaseReader,UnstructuredReader):
             'meanWavePeriod': 'mean_wave_period',
             'peakWaveNumber': 'peak_wave_number',
             'peakWaveLength': 'peak_wavelength',
-            'sigWaveHeight': 'sea_surface_wave_significant_height'
+            'sigWaveHeight': 'sea_surface_wave_significant_height',
+            'bottomStressX': 'bottom_stress_x',
+            'bottomStressY': 'bottom_stress_y'
             }
             # diffusivity
             # viscosity
