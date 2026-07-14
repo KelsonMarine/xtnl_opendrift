@@ -454,7 +454,8 @@ class Reader(BaseReader,UnstructuredReader):
             # flatten arrays and add to dictionary
             variable_dict['x_3d'] = np.ravel(x_tiled_ma[~vertical_levels.mask])
             variable_dict['y_3d'] = np.ravel(y_tiled_ma[~vertical_levels.mask])
-            variable_dict['z_3d'] = np.ravel(vertical_levels[~vertical_levels.mask])
+            # variable_dict['z_3d'] = np.ravel(vertical_levels[~vertical_levels.mask])
+            variable_dict['z_3d'] = np.ravel(vertical_levels[~np.ma.getmaskarray(vertical_levels)])  # ensures boolean array remains an array instead of single masked value
 
         return data,variable_dict
 
