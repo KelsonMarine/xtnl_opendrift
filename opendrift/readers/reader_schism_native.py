@@ -129,11 +129,11 @@ class Reader(UnstructuredReader):
                 # Open file, check that everything is ok
                 logger.info('Opening dataset: ' + filestr)
                 if ('*' in filestr) or ('?' in filestr) or ('[' in filestr):
-                    logger.info('Opening files with MFdataset')
+                    logger.info('Opening files with xr.open_mfdataset ... ')
                     # self.dataset = MFdataset(filename)
                     self.dataset = xr.open_mfdataset(filename,chunks={'time': 1}, decode_times=False)
                 else:
-                    logger.info('Opening file with dataset')
+                    logger.info('Opening file with xr.open_dataset ...')
                     # self.dataset = dataset(filename, 'r')
                     self.dataset = xr.open_dataset(filename,chunks={'time': 1}, decode_times=False)
             except Exception as e:
@@ -966,7 +966,7 @@ class ReaderBlockUnstruct():
 
             self.block_KDtree_3d = cKDTree(np.vstack((self.x_3d,self.y_3d,self.z_3d)).T)
             # do we need copy_data=True ..probably not since "data" [self.x_3d,self.y_3d,self.z_3d]
-            # will not change without the KDtree being recomputedplt
+            # will not change without the KDtree being recomputed
 
         # Mask any extremely large values, e.g. if missing netCDF _Fill_value
         filled_variables = set()

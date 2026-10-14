@@ -909,9 +909,8 @@ class OpenDriftSimulation(PhysicsMethods, Timeable, Configurable):
     def release_elements(self):
         """Activate elements which are scheduled within following timestep."""
 
-        logger.debug(
-            'to be seeded: %s, already seeded %s' %
-            (len(self.elements_scheduled), self.num_elements_activated()))
+        # logger.debug('time step: %s', self.time_step)
+        logger.debug('to be seeded: %s, already seeded %s' % (len(self.elements_scheduled), self.num_elements_activated()))
         if len(self.elements_scheduled) == 0:
             self.newly_seeded_IDs = None
             return
@@ -923,6 +922,13 @@ class OpenDriftSimulation(PhysicsMethods, Timeable, Configurable):
             indices = (self.elements_scheduled_time <= self.time) & \
                       (self.elements_scheduled_time >
                        self.time + self.time_step)
+            
+        logger.debug(
+            "self.elements_scheduled.ID.shape=%s",
+            self.elements_scheduled.ID.shape,
+        )
+        logger.debug("seeding indices.shape=%s", indices.shape)
+        logger.debug("# seeded particles=%s", np.sum(indices))
 
         self.newly_seeded_IDs = self.elements_scheduled.ID[indices]  # may be deactivated if on land
         if self._elements_previous is not None and 'lon' in self._elements_previous:

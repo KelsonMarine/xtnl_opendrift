@@ -303,8 +303,7 @@ class OceanDrift(OpenDriftSimulation):
             return
 
         if self.environment_previous is None or 'sea_surface_height' not in self.environment_previous:
-            logger.warning('water_column_stretching requires storing '
-                           'previous value of sea_surface_height')
+            logger.warning('water_column_stretching requires storing previous value of sea_surface_height')
             return
 
         delta_zeta = self.environment.sea_surface_height - self.environment_previous.sea_surface_height
@@ -524,8 +523,7 @@ class OceanDrift(OpenDriftSimulation):
             R = 2*np.random.random(self.num_elements_active()) - 1
             r = 1.0/3
             # New position  =  old position   - up_K_flux   + random walk
-            self.elements.z = self.elements.z - self.elements.moving*(
-                dKdz*dt_mix - R*np.sqrt((Kz*np.abs(dt_mix)*2/r)))
+            self.elements.z = self.elements.z - self.elements.moving*(dKdz*dt_mix - R*np.sqrt((Kz*np.abs(dt_mix)*2/r)))
 
             # Reflect from surface
             reflect = np.where(self.elements.z >= 0)
