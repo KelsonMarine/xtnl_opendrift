@@ -45,12 +45,12 @@ from netCDF4 import num2date
 from scipy.interpolate import LinearNDInterpolator
 from scipy.spatial import cKDTree #cython-based KDtree for quick nearest-neighbor search
 import pyproj
-from opendrift.readers.basereader import BaseReader, UnstructuredReader
+from opendrift.readers.basereader.unstructured import UnstructuredReader
 from opendrift.readers.basereader.consts import *
 import xarray as xr
 
 
-class Reader(BaseReader,UnstructuredReader):
+class Reader(UnstructuredReader):
     """
     A reader for unstructured (irregularily gridded) `SCHISM` files.
 
@@ -129,11 +129,11 @@ class Reader(BaseReader,UnstructuredReader):
                 # Open file, check that everything is ok
                 logger.info('Opening dataset: ' + filestr)
                 if ('*' in filestr) or ('?' in filestr) or ('[' in filestr):
-                    logger.info('Opening files with MFdataset')
+                    logger.info('Opening files with xr.open_mfdataset ... ')
                     # self.dataset = MFdataset(filename)
                     self.dataset = xr.open_mfdataset(filename,chunks={'time': 1}, decode_times=False)
                 else:
-                    logger.info('Opening file with dataset')
+                    logger.info('Opening file with xr.open_dataset ...')
                     # self.dataset = dataset(filename, 'r')
                     self.dataset = xr.open_dataset(filename,chunks={'time': 1}, decode_times=False)
             except Exception as e:
@@ -454,7 +454,8 @@ class Reader(BaseReader,UnstructuredReader):
             # flatten arrays and add to dictionary
             variable_dict['x_3d'] = np.ravel(x_tiled_ma[~vertical_levels.mask])
             variable_dict['y_3d'] = np.ravel(y_tiled_ma[~vertical_levels.mask])
-            variable_dict['z_3d'] = np.ravel(vertical_levels[~vertical_levels.mask])
+            # variable_dict['z_3d'] = np.ravel(vertical_levels[~vertical_levels.mask])
+            variable_dict['z_3d'] = np.ravel(vertical_levels[~np.ma.getmaskarray(vertical_levels)])  # ensures boolean array remains an array instead of single masked value
 
         return data,variable_dict
 
@@ -799,8 +800,7 @@ class Reader(BaseReader,UnstructuredReader):
             facecolor=cfeature.COLORS['land'],
             edgecolor='black')
 
-        gl = ax.gridlines(ccrs.PlateCarree())
-        gl.xlabels_top = False
+        gl = ax.gridlines(ccrs.PlateCarree(), draw_labels=['left', 'bottom'])
 
         # Get boundary
         npoints = 10  # points per side
@@ -966,7 +966,7 @@ class ReaderBlockUnstruct():
 
             self.block_KDtree_3d = cKDTree(np.vstack((self.x_3d,self.y_3d,self.z_3d)).T)
             # do we need copy_data=True ..probably not since "data" [self.x_3d,self.y_3d,self.z_3d]
-            # will not change without the KDtree being recomputedplt
+            # will not change without the KDtree being recomputed
 
         # Mask any extremely large values, e.g. if missing netCDF _Fill_value
         filled_variables = set()
