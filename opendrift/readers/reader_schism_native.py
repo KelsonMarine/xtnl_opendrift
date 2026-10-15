@@ -1039,6 +1039,7 @@ class ReaderBlockUnstruct():
                 # print(varname)
                 nb_closest_nodes = 3
                 DMIN=1.e-10
+
                 if data.shape[0] == self.x.shape[0] : # 2D data- full slice
                     #2D KDtree
                     dist,i=self.block_KDtree.query(np.vstack((x,y)).T,nb_closest_nodes, workers=-1) #quick nearest-neighbor lookup
@@ -1062,6 +1063,24 @@ class ReaderBlockUnstruct():
                 dist[dist<DMIN]=DMIN
                 fac=(1./dist)
                 data_interpolated = (fac*data.take(i)).sum(-1)/fac.sum(-1)
+
+                # TODO:
+                # - consider dropping nan data from lookup
+                # values = np.asarray(data)[i]
+                # weights = 1.0 / np.maximum(dist, DMIN)
+
+                # valid = np.isfinite(values)
+                # weights = np.where(valid, weights, 0.0)
+
+                # numerator = np.nansum(weights * values, axis=-1)
+                # denominator = weights.sum(axis=-1)
+
+                # data_interpolated = np.divide(
+                #     numerator,
+                #     denominator,
+                #     out=np.full(denominator.shape, np.nan),
+                #     where=denominator > 0,
+                # )
 
                 # horizontal = self._interpolate_horizontal_layers(data, nearest=nearest)
 
